@@ -108,6 +108,7 @@ func main() {
 
 	k, tok := loadLocalKeys()
 	dc := new(DynamoClient)
+	dc.Url = "https://dynamodb.us-east-1.amazonaws.com"
 	dc.Client = &aws4.Client{Keys: k}
 	dc.Token = tok
 
