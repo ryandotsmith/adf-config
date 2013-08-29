@@ -1,0 +1,13 @@
+Application Configuration Managment for Amazon Docker Flow
+
+Usage:
+
+	$ adf-config -l -a x
+	FOO=f
+	BAR=b
+
+	$ adf-config -s BAZ=b -a x
+	BAZ=b
+
+	$ adf-config -d BAZ -a x
+	BAZ=b
