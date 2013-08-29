@@ -67,7 +67,9 @@ func list(dc *DynamoClient, app string) []string {
 			Value ST
 		}
 	}{}
-	dc.do("DynamoDB_20120810.Scan", req, resp)
+	if err := dc.do("DynamoDB_20120810.Scan", req, resp); err != nil {
+		log.Fatal(err)
+	}
 	res := make([]string, resp.Count)
 	for i, item := range resp.Items {
 		res[i] = item.Name.S + "=" + item.Value.S
