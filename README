@@ -2,7 +2,7 @@ Application Configuration Managment for Amazon Docker Flow
 
 Linux Install:
 
-$ curl drone.io/github.com/ryandotsmith/adf-config/files/adf-config.tar.gz \
+$ curl -L drone.io/github.com/ryandotsmith/adf-config/files/adf-config.tar.gz \
   | tar xvz
 
 Usage:
