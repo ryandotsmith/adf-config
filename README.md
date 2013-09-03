@@ -45,14 +45,16 @@ $ curl -L drone.io/github.com/ryandotsmith/adf-config/files/adf-config.tar.gz \
 
 ## Usage
 
-``bash
+```bash
 $ adf-config -l -a x
 FOO=f
 BAR=b
 
+#TODO
 $ adf-config -s BAZ=b -a x
 BAZ=b
 
+#TODO
 $ adf-config -d BAZ -a x
 BAZ=b
 ```
