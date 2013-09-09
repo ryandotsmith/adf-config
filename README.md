@@ -1,4 +1,4 @@
-# AWS Docker Config
+﻿# AWS Docker Config
 
 This tool is designed to deliver an app's configuration from a central config database into the process environment for an app. This tool enables [Twelve-Factor style configuration](http://12factor.net/config) for apps running on EC2.
 

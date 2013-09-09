@@ -99,6 +99,27 @@ func loadLocalKeys() (*aws4.Keys, string) {
 	return &aws4.Keys{tmp.AccessKeyId, tmp.SecretAccessKey}, tmp.Token
 }
 
+// Fetching EC2's region
+func loadRegion() string {
+	h := "http://169.254.169.254"
+	p := "/latest/meta-data/placement/availability-zone"
+	resp, err := http.Get(h + p)
+	if err != nil {
+		log.Fatal(err)
+	}
+	b, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Sometimes the output ends in a letter, which doesn't match the available regions:
+	// http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html
+	last := b[len(b)-1]
+	if last != '1' || last != '2' {
+		b = b[:len(b)-1]
+	}
+	return string(b)
+}
+
 func main() {
 	var listCmd bool
 	flag.BoolVar(&listCmd, "l", true, "list config")
@@ -108,7 +129,8 @@ func main() {
 
 	k, tok := loadLocalKeys()
 	dc := new(DynamoClient)
-	dc.Url = "https://dynamodb.us-east-1.amazonaws.com"
+	region := loadRegion()
+	dc.Url = "https://dynamodb."+region+".amazonaws.com"
 	dc.Client = &aws4.Client{Keys: k}
 	dc.Token = tok
 
