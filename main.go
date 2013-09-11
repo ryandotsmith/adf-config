@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"github.com/bmizerany/aws4"
@@ -10,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"reflect"
 )
 
 type DynamoClient struct {
@@ -77,13 +79,9 @@ func list(dc *DynamoClient, app string) []string {
 	return res
 }
 
-// Using IAM Roles, we can retreive api credentials from
-// the EC2 instances meta data. When running on EC2 there are
-// no secrets required.
-func loadLocalKeys() (*aws4.Keys, string) {
+func loadMetaData(path string, tmp interface{}) {
 	h := "http://169.254.169.254"
-	p := "/latest/meta-data/iam/security-credentials/adf-config"
-	resp, err := http.Get(h + p)
+	resp, err := http.Get(h + path)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -92,11 +90,19 @@ func loadLocalKeys() (*aws4.Keys, string) {
 		log.Fatal(err)
 	}
 	resp.Body.Close()
-	tmp := &struct {
-		AccessKeyId, SecretAccessKey, Token string
-	}{}
-	json.Unmarshal(b, tmp)
-	return &aws4.Keys{tmp.AccessKeyId, tmp.SecretAccessKey}, tmp.Token
+	t := reflect.TypeOf(tmp)
+	v := reflect.ValueOf(tmp)
+	if v.Kind() != reflect.Ptr {
+		log.Fatal(errors.New("tmp must be a pointer"))
+	}
+	switch t.Elem().Kind() {
+	case reflect.Struct:
+		json.Unmarshal(b, tmp)
+	case reflect.String:
+		v.Elem().SetString(string(b))
+	default:
+		log.Fatal(errors.New("tmp must be either a struct{} or a string"))
+	}
 }
 
 func main() {
@@ -106,11 +112,29 @@ func main() {
 	flag.StringVar(&app, "a", "", "app name")
 	flag.Parse()
 
-	k, tok := loadLocalKeys()
+	// Using IAM Roles, we can retreive api credentials from
+	// the EC2 instances meta data. When running on EC2 there are
+	// no secrets required.
+	var keys struct {
+		AccessKeyId, SecretAccessKey, Token string
+	}
+	loadMetaData("/latest/meta-data/iam/security-credentials/adf-config", &keys)
+
+	// We can also retreive instances region from the EC2 meta data.
+	// Sometimes the output ends in a letter, which doesn't match the available regions:
+	// http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html
+	// therefore we'll need to crop the last character.
+	var region string
+	loadMetaData("/latest/meta-data/placement/availability-zone", &region)
+	last := region[len(region)-1]
+	if last != '1' || last != '2' {
+		region = region[:len(region)-1]
+	}
+
 	dc := new(DynamoClient)
-	dc.Url = "https://dynamodb.us-east-1.amazonaws.com"
-	dc.Client = &aws4.Client{Keys: k}
-	dc.Token = tok
+	dc.Url = "https://dynamodb." + region + ".amazonaws.com"
+	dc.Client = &aws4.Client{Keys: &aws4.Keys{keys.AccessKeyId, keys.SecretAccessKey}}
+	dc.Token = keys.Token
 
 	if listCmd {
 		for _, v := range list(dc, app) {
