@@ -68,12 +68,16 @@ func list(dc *DynamoClient, app string) []string {
 		log.Fatal(err)
 	}
 	var res []string
-	for k, item := range resp.Items[0] {
-		if k == "App" {
-			continue
+
+	for i := 0; i < len(resp.Items); i++ {
+		for k, item := range resp.Items[i] {
+			if k == "App" || k == "Value" {
+				continue
+			}
+			res = append(res, k+"="+item.S)
 		}
-		res = append(res, k + "=" + item.S)
 	}
+
 	return res
 }
 
