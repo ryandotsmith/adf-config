@@ -104,11 +104,13 @@ func main() {
 	flag.BoolVar(&listCmd, "l", true, "list config")
 	var app string
 	flag.StringVar(&app, "a", "", "app name")
+	var zone string
+	flag.StringVar(&zone, "z", "us-east-1", "availability zone")
 	flag.Parse()
 
 	k, tok := loadLocalKeys()
 	dc := new(DynamoClient)
-	dc.Url = "https://dynamodb.us-east-1.amazonaws.com"
+	dc.Url = "https://dynamodb." + zone + ".amazonaws.com"
 	dc.Client = &aws4.Client{Keys: k}
 	dc.Token = tok
 
