@@ -62,18 +62,22 @@ func list(dc *DynamoClient, app string) []string {
 	}
 	resp := &struct {
 		Count int
-		Items []struct {
-			Name  ST
-			Value ST
-		}
+		Items []map[string]ST
 	}{}
 	if err := dc.do("DynamoDB_20120810.Scan", req, resp); err != nil {
 		log.Fatal(err)
 	}
-	res := make([]string, resp.Count)
-	for i, item := range resp.Items {
-		res[i] = item.Name.S + "=" + item.Value.S
+	var res []string
+
+	for i := 0; i < len(resp.Items); i++ {
+		for k, item := range resp.Items[i] {
+			if k == "App" || k == "Value" {
+				continue
+			}
+			res = append(res, k+"="+item.S)
+		}
 	}
+
 	return res
 }
 
